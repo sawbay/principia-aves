@@ -6,6 +6,8 @@ services:
       context: .
     env_file:
       - ./.env
+    environment:
+      - BOTS_PATH=/app
     ports:
       - "8001:8001"
     volumes:
@@ -22,9 +24,9 @@ services:
     environment:
       - BROKER_HOST=host.docker.internal
     volumes:
-      - ./bots/pools/warmbot_1/conf:/home/hummingbot/conf:rw
-      - ./bots/pools/warmbot_1/data:/home/hummingbot/data:rw
-      - ./bots/pools/warmbot_1/logs:/home/hummingbot/logs:rw
+      - ./bots/instances/warmbot_1/conf:/home/hummingbot/conf:rw
+      - ./bots/instances/warmbot_1/data:/home/hummingbot/data:rw
+      - ./bots/instances/warmbot_1/logs:/home/hummingbot/logs:rw
       - ./bots/scripts:/home/hummingbot/scripts:rw
       - ./bots/controllers:/home/hummingbot/controllers:rw
     logging:
@@ -45,9 +47,9 @@ services:
     environment:
       - BROKER_HOST=host.docker.internal
     volumes:
-      - ./bots/pools/warmbot_2/conf:/home/hummingbot/conf:rw
-      - ./bots/pools/warmbot_2/data:/home/hummingbot/data:rw
-      - ./bots/pools/warmbot_2/logs:/home/hummingbot/logs:rw
+      - ./bots/instances/warmbot_2/conf:/home/hummingbot/conf:rw
+      - ./bots/instances/warmbot_2/data:/home/hummingbot/data:rw
+      - ./bots/instances/warmbot_2/logs:/home/hummingbot/logs:rw
       - ./bots/scripts:/home/hummingbot/scripts:rw
       - ./bots/controllers:/home/hummingbot/controllers:rw
     logging:
@@ -68,9 +70,9 @@ services:
   #   environment:
   #     - BROKER_HOST=host.docker.internal
   #   volumes:
-  #     - ./bots/pools/warmbot_3/conf:/home/hummingbot/conf:rw
-  #     - ./bots/pools/warmbot_3/data:/home/hummingbot/data:rw
-  #     - ./bots/pools/warmbot_3/logs:/home/hummingbot/logs:rw
+  #     - ./bots/instances/warmbot_3/conf:/home/hummingbot/conf:rw
+  #     - ./bots/instances/warmbot_3/data:/home/hummingbot/data:rw
+  #     - ./bots/instances/warmbot_3/logs:/home/hummingbot/logs:rw
   #     - ./bots/scripts:/home/hummingbot/scripts:rw
   #     - ./bots/controllers:/home/hummingbot/controllers:rw
   #   logging:
