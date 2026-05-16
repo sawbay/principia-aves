@@ -12,7 +12,7 @@ It owns:
 - MQTT subscription to `orchestrate/deploy`.
 - MQTT status publishing to `orchestrate/status`.
 - R2 hydration of requested durable deployment files.
-- Copying credentials, script configs, and controller configs into `bots/pools/<warmbot_id>/conf`.
+- Copying credentials, script configs, and controller configs into `bots/instances/<warmbot_id>/conf`.
 - Starting and stopping already-running warmbot containers over MQTT.
 - Publishing runtime status so `hummingbot-api` can update durable deployment state.
 
@@ -54,7 +54,7 @@ docker compose -f docker-compose.yml -f principia-aves/docker-compose.yml up --b
 
 - Compose paths in that file are root-relative by design.
 - Mount the sidecar runtime bots folder as `./principia-aves/bots:/app/bots`.
-- Warmbot services should mount `./principia-aves/bots/pools/<warmbot_id>/...`.
+- Warmbot services should mount `./principia-aves/bots/instances/<warmbot_id>/...`.
 - Warmbot services should read the root `.env` because Hummingbot needs `CONFIG_PASSWORD`.
 - The Rust sidecar should read `./principia-aves/.env`.
 

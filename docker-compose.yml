@@ -37,28 +37,28 @@ services:
     tty: true
     stdin_open: true
 
-  warmbot-02:
-    image: ${HUMMINGBOT_IMAGE:-ghcr.io/sawbay/hummingbot:latest}
-    container_name: warmbot_2
-    restart: unless-stopped
-    network_mode: host
-    env_file:
-      - .env
-    environment:
-      - BROKER_HOST=host.docker.internal
-    volumes:
-      - ./bots/instances/warmbot_2/conf:/home/hummingbot/conf:rw
-      - ./bots/instances/warmbot_2/data:/home/hummingbot/data:rw
-      - ./bots/instances/warmbot_2/logs:/home/hummingbot/logs:rw
-      # - ./bots/scripts:/home/hummingbot/scripts:rw
-      # - ./bots/controllers:/home/hummingbot/controllers:rw
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "5"
-    tty: true
-    stdin_open: true
+  # warmbot-02:
+  #   image: ${HUMMINGBOT_IMAGE:-ghcr.io/sawbay/hummingbot:latest}
+  #   container_name: warmbot_2
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - BROKER_HOST=host.docker.internal
+  #   volumes:
+  #     - ./bots/instances/warmbot_2/conf:/home/hummingbot/conf:rw
+  #     - ./bots/instances/warmbot_2/data:/home/hummingbot/data:rw
+  #     - ./bots/instances/warmbot_2/logs:/home/hummingbot/logs:rw
+  #     # - ./bots/scripts:/home/hummingbot/scripts:rw
+  #     # - ./bots/controllers:/home/hummingbot/controllers:rw
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: 10m
+  #       max-file: "5"
+  #   tty: true
+  #   stdin_open: true
 
   # warmbot-03:
   #   image: ${HUMMINGBOT_IMAGE:-ghcr.io/sawbay/hummingbot:latest}

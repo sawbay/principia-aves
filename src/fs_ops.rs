@@ -20,11 +20,11 @@ pub async fn prepare_controller_deployment(
 
     let source_scripts_dir = bots_path.join("bots/conf/scripts");
     let pool_scripts_dir = bots_path
-        .join("bots/pools")
+        .join("bots/instances")
         .join(bot_name)
         .join("conf/scripts");
     let pool_controllers_dir = bots_path
-        .join("bots/pools")
+        .join("bots/instances")
         .join(bot_name)
         .join("conf/controllers");
 
@@ -85,11 +85,11 @@ pub async fn prepare_existing_deployment(
     validate_controllers(bots_path, &controllers).await?;
 
     let pool_scripts_dir = bots_path
-        .join("bots/pools")
+        .join("bots/instances")
         .join(bot_name)
         .join("conf/scripts");
     let pool_controllers_dir = bots_path
-        .join("bots/pools")
+        .join("bots/instances")
         .join(bot_name)
         .join("conf/controllers");
 
@@ -136,7 +136,7 @@ pub async fn cleanup_assignment(
     config_name: &str,
     controllers: &[String],
 ) -> AppResult<()> {
-    let pool_conf = bots_path.join("bots/pools").join(bot_name).join("conf");
+    let pool_conf = bots_path.join("bots/instances").join(bot_name).join("conf");
     let scripts_dir = pool_conf.join("scripts");
     let controllers_dir = pool_conf.join("controllers");
 
@@ -187,7 +187,7 @@ async fn sync_credentials_profile_to_pool(
     profile: &str,
 ) -> AppResult<()> {
     let source = bots_path.join("bots/credentials").join(profile);
-    let destination = bots_path.join("bots/pools").join(bot_name).join("conf");
+    let destination = bots_path.join("bots/instances").join(bot_name).join("conf");
     let bot_name = bot_name.to_string();
 
     tokio::task::spawn_blocking(move || -> AppResult<()> {
@@ -269,7 +269,7 @@ async fn validate_controllers(bots_path: &Path, controllers: &[String]) -> AppRe
 }
 
 async fn validate_pool_slot(bots_path: &Path, bot_name: &str) -> AppResult<()> {
-    let path = bots_path.join("bots/pools").join(bot_name).join("conf");
+    let path = bots_path.join("bots/instances").join(bot_name).join("conf");
     if fs::metadata(&path)
         .await
         .map(|m| m.is_dir())
@@ -316,7 +316,7 @@ mod tests {
     async fn cleanup_removes_only_assignment_files() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path();
-        let conf = root.join("bots/pools/warmbot_1/conf");
+        let conf = root.join("bots/instances/warmbot_1/conf");
         fs::create_dir_all(conf.join("scripts")).await.unwrap();
         fs::create_dir_all(conf.join("controllers")).await.unwrap();
         fs::write(conf.join("conf_client.yml"), "baseline")

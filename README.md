@@ -17,7 +17,7 @@ principia-aves/
     conf/
       scripts/
       controllers/
-    pools/
+    instances/
       warmbot_1/
       warmbot_2/
 ```
@@ -26,9 +26,9 @@ Important mounts:
 
 ```yaml
 ./principia-aves/bots:/app/bots
-./principia-aves/bots/pools/warmbot_1/conf:/home/hummingbot/conf
-./principia-aves/bots/pools/warmbot_1/data:/home/hummingbot/data
-./principia-aves/bots/pools/warmbot_1/logs:/home/hummingbot/logs
+./principia-aves/bots/instances/warmbot_1/conf:/home/hummingbot/conf
+./principia-aves/bots/instances/warmbot_1/data:/home/hummingbot/data
+./principia-aves/bots/instances/warmbot_1/logs:/home/hummingbot/logs
 ```
 
 The Rust code expects `BOTS_PATH=/app`, so paths resolve as `/app/bots/...` inside the sidecar container.
