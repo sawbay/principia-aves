@@ -22,6 +22,7 @@ services:
     env_file:
       - .env
     environment:
+      - HEADLESS_MODE=true
       - BROKER_HOST=host.docker.internal
     volumes:
       - ./bots/instances/warmbot_1/conf:/home/hummingbot/conf:rw
@@ -45,6 +46,7 @@ services:
     env_file:
       - .env
     environment:
+      - HEADLESS_MODE=true
       - BROKER_HOST=host.docker.internal
     volumes:
       - ./bots/instances/warmbot_2/conf:/home/hummingbot/conf:rw
@@ -68,6 +70,7 @@ services:
   #   env_file:
   #     - .env
   #   environment:
+  #     - HEADLESS_MODE=true
   #     - BROKER_HOST=host.docker.internal
   #   volumes:
   #     - ./bots/instances/warmbot_3/conf:/home/hummingbot/conf:rw
