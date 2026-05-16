@@ -22,14 +22,13 @@ services:
     env_file:
       - .env
     environment:
-      - HEADLESS_MODE=true
       - BROKER_HOST=host.docker.internal
     volumes:
       - ./bots/instances/warmbot_1/conf:/home/hummingbot/conf:rw
       - ./bots/instances/warmbot_1/data:/home/hummingbot/data:rw
       - ./bots/instances/warmbot_1/logs:/home/hummingbot/logs:rw
-      - ./bots/scripts:/home/hummingbot/scripts:rw
-      - ./bots/controllers:/home/hummingbot/controllers:rw
+      # - ./bots/scripts:/home/hummingbot/scripts:rw
+      # - ./bots/controllers:/home/hummingbot/controllers:rw
     logging:
       driver: json-file
       options:
@@ -46,14 +45,13 @@ services:
     env_file:
       - .env
     environment:
-      - HEADLESS_MODE=true
       - BROKER_HOST=host.docker.internal
     volumes:
       - ./bots/instances/warmbot_2/conf:/home/hummingbot/conf:rw
       - ./bots/instances/warmbot_2/data:/home/hummingbot/data:rw
       - ./bots/instances/warmbot_2/logs:/home/hummingbot/logs:rw
-      - ./bots/scripts:/home/hummingbot/scripts:rw
-      - ./bots/controllers:/home/hummingbot/controllers:rw
+      # - ./bots/scripts:/home/hummingbot/scripts:rw
+      # - ./bots/controllers:/home/hummingbot/controllers:rw
     logging:
       driver: json-file
       options:
@@ -70,14 +68,13 @@ services:
   #   env_file:
   #     - .env
   #   environment:
-  #     - HEADLESS_MODE=true
   #     - BROKER_HOST=host.docker.internal
   #   volumes:
   #     - ./bots/instances/warmbot_3/conf:/home/hummingbot/conf:rw
   #     - ./bots/instances/warmbot_3/data:/home/hummingbot/data:rw
   #     - ./bots/instances/warmbot_3/logs:/home/hummingbot/logs:rw
-  #     - ./bots/scripts:/home/hummingbot/scripts:rw
-  #     - ./bots/controllers:/home/hummingbot/controllers:rw
+  #     # - ./bots/scripts:/home/hummingbot/scripts:rw
+  #     # - ./bots/controllers:/home/hummingbot/controllers:rw
   #   logging:
   #     driver: json-file
   #     options:
