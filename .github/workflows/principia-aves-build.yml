@@ -1,7 +1,9 @@
 name: principia-aves build
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - main
   workflow_dispatch:
@@ -15,6 +17,7 @@ env:
 
 jobs:
   build_and_push:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,7 +26,11 @@ jobs:
       - name: Extract version from Cargo.toml
         id: get_version
         run: |
-          VERSION=$(grep -E '^version *= *' principia-aves/Cargo.toml | head -1 | sed -E 's/^version *= *"([^"]+)"/\1/')
+          VERSION=$(grep -E '^version *= *' Cargo.toml | head -1 | sed -E 's/^version *= *"([^"]+)"/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Failed to extract version from Cargo.toml" >&2
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
@@ -42,8 +49,8 @@ jobs:
       - name: Build and push Docker images to GHCR
         uses: docker/build-push-action@v5
         with:
-          context: ./principia-aves
-          file: ./principia-aves/Dockerfile
+          context: .
+          file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
