@@ -3,7 +3,7 @@ name: principia-aves build
 on:
   push:
     branches:
-      - bot-pool
+      - main
   workflow_dispatch:
 
 permissions:
