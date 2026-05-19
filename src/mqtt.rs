@@ -1,8 +1,9 @@
 use std::collections::{HashMap, VecDeque};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS, Transport};
+use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, Outgoing, QoS, Transport};
 use serde_json::{json, Value};
 use tokio::sync::{broadcast, oneshot, Mutex};
 use tokio::time::{sleep, timeout, Instant};
@@ -12,6 +13,8 @@ use crate::slot_store::SlotStore;
 use crate::types::SlotStatus;
 
 pub const ORCHESTRATE_DEPLOY_TOPIC: &str = "orchestrate/deploy";
+const MQTT_RECONNECT_BACKOFF_INITIAL: Duration = Duration::from_secs(1);
+const MQTT_RECONNECT_BACKOFF_MAX: Duration = Duration::from_secs(30);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StrategyContentState {
@@ -26,6 +29,7 @@ pub struct MqttBus {
     pending: Arc<Mutex<HashMap<String, oneshot::Sender<Value>>>>,
     orchestrate_tx: broadcast::Sender<Value>,
     logs: Arc<Mutex<HashMap<String, VecDeque<Value>>>>,
+    connected: Arc<AtomicBool>,
 }
 
 impl MqttBus {
@@ -52,30 +56,20 @@ impl MqttBus {
             pending: Arc::new(Mutex::new(HashMap::new())),
             orchestrate_tx,
             logs: Arc::new(Mutex::new(HashMap::new())),
+            connected: Arc::new(AtomicBool::new(false)),
         };
 
-        bus.subscribe_defaults().await?;
         bus.spawn_event_loop(event_loop, slots);
+        bus.subscribe_defaults().await?;
         Ok(bus)
     }
 
     pub async fn subscribe_defaults(&self) -> anyhow::Result<()> {
-        for topic in [
-            "hbot/+/hb",
-            "hbot/+/status_updates",
-            "hbot/+/log",
-            "hbot/+/notify",
-            "hbot/+/performance",
-            "hummingbot-api/response/+",
-            ORCHESTRATE_DEPLOY_TOPIC,
-        ] {
-            self.client.subscribe(topic, QoS::AtLeastOnce).await?;
-        }
-        Ok(())
+        subscribe_defaults(&self.client).await
     }
 
     pub fn is_connected(&self) -> bool {
-        true
+        self.connected.load(Ordering::Relaxed)
     }
 
     pub fn subscribe_orchestrate(&self) -> broadcast::Receiver<Value> {
@@ -237,11 +231,26 @@ impl MqttBus {
         let pending = self.pending.clone();
         let orchestrate_tx = self.orchestrate_tx.clone();
         let logs = self.logs.clone();
+        let client = self.client.clone();
+        let connected = self.connected.clone();
 
         tokio::spawn(async move {
+            let mut reconnect_backoff = MQTT_RECONNECT_BACKOFF_INITIAL;
             loop {
                 match event_loop.poll().await {
+                    Ok(Event::Incoming(Incoming::ConnAck(_))) => {
+                        connected.store(true, Ordering::Relaxed);
+                        reconnect_backoff = MQTT_RECONNECT_BACKOFF_INITIAL;
+                        tracing::info!("mqtt connection established; ensuring subscriptions");
+                        if let Err(err) = subscribe_defaults(&client).await {
+                            tracing::warn!(
+                                "failed to subscribe to default MQTT topics after reconnect: {err}"
+                            );
+                        }
+                    }
                     Ok(Event::Incoming(Incoming::Publish(packet))) => {
+                        connected.store(true, Ordering::Relaxed);
+                        reconnect_backoff = MQTT_RECONNECT_BACKOFF_INITIAL;
                         handle_publish(
                             packet.topic,
                             packet.payload.to_vec(),
@@ -252,15 +261,45 @@ impl MqttBus {
                         )
                         .await;
                     }
-                    Ok(_) => {}
+                    Ok(Event::Outgoing(Outgoing::Disconnect)) => {
+                        connected.store(false, Ordering::Relaxed);
+                    }
+                    Ok(_) => {
+                        reconnect_backoff = MQTT_RECONNECT_BACKOFF_INITIAL;
+                    }
                     Err(err) => {
-                        tracing::warn!("mqtt event loop error: {err}");
-                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        connected.store(false, Ordering::Relaxed);
+                        tracing::warn!(
+                            error = %err,
+                            retry_in_secs = reconnect_backoff.as_secs(),
+                            "mqtt event loop error; retrying"
+                        );
+                        tokio::time::sleep(reconnect_backoff).await;
+                        reconnect_backoff = next_reconnect_backoff(reconnect_backoff);
                     }
                 }
             }
         });
     }
+}
+
+async fn subscribe_defaults(client: &AsyncClient) -> anyhow::Result<()> {
+    for topic in [
+        "hbot/+/hb",
+        "hbot/+/status_updates",
+        "hbot/+/log",
+        "hbot/+/notify",
+        "hbot/+/performance",
+        "hummingbot-api/response/+",
+        ORCHESTRATE_DEPLOY_TOPIC,
+    ] {
+        client.subscribe(topic, QoS::AtLeastOnce).await?;
+    }
+    Ok(())
+}
+
+fn next_reconnect_backoff(current: Duration) -> Duration {
+    (current * 2).min(MQTT_RECONNECT_BACKOFF_MAX)
 }
 
 async fn handle_publish(
@@ -374,9 +413,14 @@ fn millis() -> u128 {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use serde_json::json;
 
-    use super::{classify_strategy_status_response, parse_payload, StrategyContentState};
+    use super::{
+        classify_strategy_status_response, next_reconnect_backoff, parse_payload,
+        StrategyContentState, MQTT_RECONNECT_BACKOFF_MAX,
+    };
 
     #[test]
     fn parses_plain_string_payload() {
@@ -423,6 +467,18 @@ mod tests {
         assert_eq!(
             classify_strategy_status_response(&response),
             StrategyContentState::Running
+        );
+    }
+
+    #[test]
+    fn caps_reconnect_backoff() {
+        assert_eq!(
+            next_reconnect_backoff(Duration::from_secs(1)),
+            Duration::from_secs(2)
+        );
+        assert_eq!(
+            next_reconnect_backoff(MQTT_RECONNECT_BACKOFF_MAX),
+            MQTT_RECONNECT_BACKOFF_MAX
         );
     }
 }

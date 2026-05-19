@@ -234,6 +234,12 @@ impl Orchestrator {
         );
         if let Err(err) = self.r2.hydrate_keys(&keys).await {
             let error = err.to_string();
+            tracing::error!(
+                request_id = %request.request_id,
+                bot_name = %slot.bot_name,
+                error = %error,
+                "failed to hydrate orchestration files from R2"
+            );
             self.slots.mark_error(&slot.bot_name, error.clone()).await;
             let _ = self
                 .publish_orchestration_status(&request, Some(&slot.bot_name), "failed", Some(error))

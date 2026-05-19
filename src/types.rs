@@ -91,18 +91,26 @@ pub struct OrchestrationR2Keys {
 impl OrchestrationR2Keys {
     pub fn flatten(&self) -> Vec<String> {
         let mut keys = Vec::new();
-        keys.push(self.credential_profile.clone());
+        keys.push(as_prefix_key(&self.credential_profile));
         if let Some(script_config) = &self.script_config {
             keys.push(script_config.clone());
         }
         keys.extend(self.controllers.clone());
         if let Some(scripts_runtime) = &self.scripts_runtime {
-            keys.push(scripts_runtime.clone());
+            keys.push(as_prefix_key(scripts_runtime));
         }
         if let Some(controllers_runtime) = &self.controllers_runtime {
-            keys.push(controllers_runtime.clone());
+            keys.push(as_prefix_key(controllers_runtime));
         }
         keys
+    }
+}
+
+fn as_prefix_key(key: &str) -> String {
+    if key.ends_with('/') {
+        key.to_string()
+    } else {
+        format!("{key}/")
     }
 }
 
@@ -139,4 +147,31 @@ pub struct ApiResponse<T: Serialize> {
 pub struct DeploymentFiles {
     pub script_config_name: String,
     pub controllers: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OrchestrationR2Keys;
+
+    #[test]
+    fn orchestration_r2_keys_treat_profiles_and_runtime_as_prefixes() {
+        let keys = OrchestrationR2Keys {
+            credential_profile: "bots/credentials/master_account".to_string(),
+            script_config: Some("bots/conf/scripts/run.yml".to_string()),
+            controllers: vec!["bots/conf/controllers/controller.yml".to_string()],
+            scripts_runtime: Some("bots/conf/scripts/runtime".to_string()),
+            controllers_runtime: Some("bots/conf/controllers/runtime/".to_string()),
+        };
+
+        assert_eq!(
+            keys.flatten(),
+            vec![
+                "bots/credentials/master_account/".to_string(),
+                "bots/conf/scripts/run.yml".to_string(),
+                "bots/conf/controllers/controller.yml".to_string(),
+                "bots/conf/scripts/runtime/".to_string(),
+                "bots/conf/controllers/runtime/".to_string(),
+            ]
+        );
+    }
 }

@@ -50,6 +50,7 @@ impl R2Client {
 
     pub async fn hydrate_keys(&self, keys: &[String]) -> anyhow::Result<()> {
         if !self.enabled {
+            tracing::info!("R2 hydration disabled; skipping orchestration file sync");
             return Ok(());
         }
         for key in keys {
@@ -65,10 +66,14 @@ impl R2Client {
     async fn download_prefix(&self, prefix: &str) -> anyhow::Result<()> {
         let store = self.store.as_ref().expect("R2 store missing");
         let object_prefix = ObjectPath::from(prefix.trim_end_matches('/'));
+        tracing::info!(prefix = %prefix, "hydrating R2 prefix");
         let mut stream = store.list(Some(&object_prefix));
+        let mut count = 0usize;
         while let Some(meta) = stream.try_next().await? {
             self.download_key(meta.location.as_ref()).await?;
+            count += 1;
         }
+        tracing::info!(prefix = %prefix, object_count = count, "hydrated R2 prefix");
         Ok(())
     }
 
@@ -81,6 +86,12 @@ impl R2Client {
 
         let bytes = store.get(&ObjectPath::from(key)).await?.bytes().await?;
         tokio::fs::write(&destination, bytes.as_ref()).await?;
+        tracing::info!(
+            key = %key,
+            destination = %destination.display(),
+            byte_count = bytes.len(),
+            "hydrated R2 object"
+        );
         Ok(())
     }
 

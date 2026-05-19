@@ -35,6 +35,13 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let settings = Settings::load().context("load settings")?;
+    tracing::info!(
+        port = settings.port,
+        broker_host = %settings.broker_host,
+        broker_port = settings.broker_port,
+        r2_enabled = settings.r2_enabled,
+        "loaded settings"
+    );
     let slots = SlotStore::new(settings.pool_bots.clone());
 
     let docker = DockerClient::new();

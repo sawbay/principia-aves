@@ -93,6 +93,8 @@ pub async fn prepare_existing_deployment(
         .join(bot_name)
         .join("conf/controllers");
 
+    // TODO: log the pool_scripts_dir and pool_controllers_dir paths for debugging
+
     fs::create_dir_all(&pool_scripts_dir)
         .await
         .map_err(to_internal)?;
